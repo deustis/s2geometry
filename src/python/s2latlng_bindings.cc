@@ -3,8 +3,8 @@
 
 #include <cmath>
 #include <sstream>
-#include <string>
 
+#include "absl/strings/str_cat.h"
 #include "s2/s1angle.h"
 #include "s2/s2latlng.h"
 #include "s2/s2point.h"
@@ -24,7 +24,7 @@ void MaybeThrowNotValid(const S2LatLng& ll) {
 
 void MaybeThrowNotFinite(double m) {
   if (!std::isfinite(m)) {
-    throw py::value_error("Scalar must be finite, got " + std::to_string(m));
+    throw py::value_error(absl::StrCat("Scalar must be finite, got ", m));
   }
 }
 

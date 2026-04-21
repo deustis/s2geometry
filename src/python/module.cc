@@ -29,5 +29,7 @@ PYBIND11_MODULE(s2geometry_bindings, m) {
 
   // Deps: s2point
   bind_s1angle(m);
+
+  // Deps: s1angle, s2point
   bind_s2latlng(m);
 }
