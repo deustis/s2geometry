@@ -33,26 +33,34 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 30
     steps:
-      - uses: zacharyburnett/setup-abseil-cpp@5386866b5b554e420966aa7f31a477ad92f185d2 # Not a release, but has #423 fix.
-        with:
-          cmake-build-args: "-DCMAKE_CXX_STANDARD=17 -DABSL_PROPAGATE_CXX_STD=ON -DABSL_ENABLE_INSTALL=ON -DBUILD_TESTING=off -DCMAKE_POSITION_INDEPENDENT_CODE=ON"
-          abseil-version: "20250814.1"
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set NUM_CORES
+        run: |
+          NUM_CORES=$(getconf _NPROCESSORS_ONLN)
+          echo "NUM_CORES=$NUM_CORES" >> $GITHUB_ENV
+          echo "Detected $NUM_CORES cores"
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@33522472633dbd32578e909b315f5ee43ba878ce # v1.2.22
+        with:
+          key: ${{ github.job }}-${{ matrix.runs-on }}
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install swig
       - run: mkdir build
       - run: >
           cmake
-          -DWITH_PYTHON=yes
+          -DWITH_PYTHON=ON
+          -DWITH_PYTHON_LIMITED_API=${{ matrix.runs-on != 'ubuntu-22.04' && 'ON' || 'OFF' }}
+          -DFETCH_ABSEIL=ON
           -DCMAKE_CXX_STANDARD=17
-          -DCMAKE_PREFIX_PATH=/usr/local/
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           ..
         working-directory: build/
-      - run: cmake --build . --parallel 45
+      - run: cmake --build . --parallel ${{ env.NUM_CORES }}
         working-directory: build/
       - if: always()
-        run: cmake --build . --parallel 45 --target=test
-        env:
-          CTEST_OUTPUT_ON_FAILURE: ON
-          CTEST_PARALLEL_LEVEL: 45
+        run: ctest --parallel ${{ env.NUM_CORES }} --output-on-failure
         working-directory: build/
   bazel:
     runs-on: ubuntu-latest
@@ -67,20 +75,22 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
-    - name: Setup Bazel ${{ matrix.bazel }}
-      uses: bazel-contrib/setup-bazel@083175551ceeceebc757ebee2127fde78840ca77  # v0.18.0
+    - name: Setup Bazel
+      uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # v0.19.0
       with:
         # Avoid downloading Bazel every time.
         bazelisk-cache: true
-        # Store build cache per workflow.
-        disk-cache: ${{ github.workflow }}
-        # Share repository cache between workflows.
+        # Share caches between workflows.
+        disk-cache: true
         repository-cache: true
+        # The Bazel workspace is in the src directory.
+        workspace-root: src
 
     - name: Build and Test
       run: |
         bazel test \
-          --jobs=45 --keep_going \
-          --test_verbose_timeout_warnings --test_output=errors \
+          --config=ci \
+          --keep_going \
+          --test_verbose_timeout_warnings \
           //...
       working-directory: src

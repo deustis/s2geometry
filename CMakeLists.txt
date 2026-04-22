@@ -35,6 +35,8 @@ option(BUILD_EXAMPLES "Build s2 documentation examples." ON)
 option(BUILD_TESTS "Build s2 unittests." ON)
 
 option(WITH_PYTHON "Add python interface" OFF)
+# Requires SWIG >= 4.2 and CMake >= 3.26.
+option(WITH_PYTHON_LIMITED_API "Use Python Limited API for SWIG" OFF)
 add_feature_info(PYTHON WITH_PYTHON "provides python interface to S2")
 
 option(S2_USE_SYSTEM_INCLUDES
@@ -59,7 +61,22 @@ add_definitions(-DABSL_MIN_LOG_LEVEL=1)
 # add_subdirectory(absl-submbodule)
 # add_subdirectory(s2-submodule)
 if (NOT TARGET absl::base)
-    find_package(absl REQUIRED)
+    option(FETCH_ABSEIL "Download and build abseil-cpp" OFF)
+    if (FETCH_ABSEIL)
+        message(STATUS "Downloading and building abseil-cpp...")
+        FetchContent_Declare(
+            absl
+            URL https://github.com/abseil/abseil-cpp/archive/refs/tags/20250814.1.zip
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        )
+        set(ABSL_PROPAGATE_CXX_STD ON CACHE BOOL "" FORCE)
+        set(ABSL_ENABLE_INSTALL ON CACHE BOOL "" FORCE)
+        set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+        set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(absl)
+    else()
+        find_package(absl REQUIRED)
+    endif()
 endif()
 # pthreads isn't used directly, but this is still required for std::thread.
 find_package(Threads REQUIRED)
@@ -69,12 +86,19 @@ if (NOT TARGET absl::vlog_is_on)
 endif()
 
 if (WITH_PYTHON)
-    # Should be easy to make it work with swig3, but some args to %pythonprepend
-    # seem to be different and were changed.
-    find_package(SWIG 4.0)
     # Use Python3_ROOT_DIR to help find python3, if the correct location is not
     # being found by default.
-    find_package(Python3 COMPONENTS Interpreter Development.Module)
+    if (WITH_PYTHON_LIMITED_API)
+        # Development.SABIModule requires CMake 3.26; be explicit.
+        cmake_minimum_required(VERSION 3.26)
+        find_package(Python3 3.10 COMPONENTS Interpreter Development.SABIModule REQUIRED)
+        # SWIG requires 4.2 for stable ABI support.
+        # https://www.swig.org/Doc4.2/Python.html#Python_stable_abi
+        find_package(SWIG 4.2 REQUIRED)
+    else()
+        find_package(Python3 3.10 COMPONENTS Interpreter Development.Module REQUIRED)
+        find_package(SWIG 4.0 REQUIRED)
+    endif()
 endif()
 
 if (MSVC)
@@ -488,7 +512,7 @@ if (BUILD_EXAMPLES AND TARGET s2testing)
   add_subdirectory("doc/examples" examples)
 endif()
 
-if (SWIG_FOUND AND Python3_FOUND)
+if (WITH_PYTHON)
   add_subdirectory("src/python" python)
 endif()
 
