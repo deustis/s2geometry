@@ -1,8 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
 
-#include <sstream>
-
 #include "absl/strings/str_cat.h"
 #include "s2/s1interval.h"
 
