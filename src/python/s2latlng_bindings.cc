@@ -15,10 +15,9 @@ namespace {
 
 void MaybeThrowNotValid(const S2LatLng& ll) {
   if (!ll.is_valid()) {
-    std::ostringstream oss;
-    oss << "Invalid S2LatLng: " << ll
-        << " (latitude must be in [-90, 90], longitude in [-180, 180])";
-    throw py::value_error(oss.str());
+    throw py::value_error(absl::StrCat(
+        "Invalid S2LatLng: (", ll.lat().degrees(), ", ", ll.lng().degrees(),
+        ") (latitude must be in [-90, 90], longitude in [-180, 180])"));
   }
 }
 
@@ -70,6 +69,18 @@ void bind_s2latlng(py::module& m) {
            py::arg("lat_radians"), py::arg("lng_radians"),
            "Construct from latitude and longitude in radians.\n\n"
            "Raises ValueError if out of range.")
+      .def_static("from_radians_normalized",
+           [](double lat_radians, double lng_radians) {
+               MaybeThrowNotFinite(lat_radians);
+               MaybeThrowNotFinite(lng_radians);
+               return S2LatLng::FromRadians(lat_radians, lng_radians)
+                   .Normalized();
+           },
+           py::arg("lat_radians"), py::arg("lng_radians"),
+           "Construct from latitude and longitude in radians, accepting any\n"
+           "finite values. Latitude is clamped to [-Pi/2, Pi/2] and longitude\n"
+           "is wrapped to [-Pi, Pi].\n\n"
+           "Raises ValueError if either value is non-finite.")
       .def_static("from_degrees", [](double lat_degrees, double lng_degrees) {
                S2LatLng ll = S2LatLng::FromDegrees(lat_degrees, lng_degrees);
                MaybeThrowNotValid(ll);
@@ -111,9 +122,8 @@ void bind_s2latlng(py::module& m) {
       .def_property_readonly("lat", &S2LatLng::lat, "The latitude as an S1Angle")
       .def_property_readonly("lng", &S2LatLng::lng,
                              "The longitude as an S1Angle")
-      .def("coords", [](const S2LatLng& self) {
-        return py::make_tuple(self.coords().x(), self.coords().y());
-      }, "Return the (lat, lng) coordinates in radians as a tuple")
+      .def_property_readonly("coords", &S2LatLng::coords,
+                             "The (lat, lng) coordinates in radians as an R2Point")
 
       // Geometric operations
       .def("to_point", &S2LatLng::ToPoint,
@@ -122,8 +132,6 @@ void bind_s2latlng(py::module& m) {
            py::arg("other"),
            "Return the surface distance to another S2LatLng.\n\n"
            "Uses the Haversine formula.")
-      .def("to_string_in_degrees", &S2LatLng::ToStringInDegrees,
-           "Return \"lat,lng\" in degrees, e.g. \"37.794000,-122.395000\"")
       // Note: default value must match C++ signature in s2latlng.h
       .def("approx_equals", [](const S2LatLng& self, const S2LatLng& o,
                                 S1Angle max_error) {
@@ -174,6 +182,8 @@ void bind_s2latlng(py::module& m) {
            "Note: the native C++ implementation does not normalize.")
 
       // String representation
+      .def("to_string_in_degrees", &S2LatLng::ToStringInDegrees,
+           "Return \"lat,lng\" in degrees, e.g. \"37.794000,-122.395000\"")
       .def("__repr__", [](const S2LatLng& ll) {
         std::ostringstream oss;
         oss << "S2LatLng(" << ll << ")";

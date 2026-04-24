@@ -34,7 +34,7 @@ class TestS2LatLng(unittest.TestCase):
                         s2.S1Angle.from_degrees(0.0))
         self.assertEqual(
             str(cm.exception),
-            "Invalid S2LatLng: [91.0000000, 0.0000000] "
+            "Invalid S2LatLng: (91, 0) "
             "(latitude must be in [-90, 90], longitude in [-180, 180])")
 
     def test_constructor_from_angles_invalid_lng_raises(self):
@@ -68,6 +68,28 @@ class TestS2LatLng(unittest.TestCase):
     def test_from_radians_invalid_raises(self):
         with self.assertRaises(ValueError):
             s2.S2LatLng.from_radians(2.0, 0.0)  # lat > pi/2
+
+    def test_from_radians_normalized_clamps_latitude(self):
+        ll = s2.S2LatLng.from_radians_normalized(2.0, 0.0)  # lat > pi/2
+        self.assertAlmostEqual(ll.lat.radians, math.pi / 2)
+        self.assertAlmostEqual(ll.lng.radians, 0.0)
+
+    def test_from_radians_normalized_wraps_longitude(self):
+        # 3*pi/2 wraps to -pi/2
+        ll = s2.S2LatLng.from_radians_normalized(0.0, 3 * math.pi / 2)
+        self.assertAlmostEqual(ll.lat.radians, 0.0)
+        self.assertAlmostEqual(ll.lng.radians, -math.pi / 2)
+
+    def test_from_radians_normalized_in_range_is_unchanged(self):
+        ll = s2.S2LatLng.from_radians_normalized(0.5, -1.0)
+        self.assertAlmostEqual(ll.lat.radians, 0.5)
+        self.assertAlmostEqual(ll.lng.radians, -1.0)
+
+    def test_from_radians_normalized_non_finite_raises(self):
+        with self.assertRaises(ValueError):
+            s2.S2LatLng.from_radians_normalized(float('nan'), 0.0)
+        with self.assertRaises(ValueError):
+            s2.S2LatLng.from_radians_normalized(0.0, float('inf'))
 
     def test_from_degrees(self):
         ll = s2.S2LatLng.from_degrees(45.0, -90.0)
@@ -133,9 +155,10 @@ class TestS2LatLng(unittest.TestCase):
 
     def test_coords(self):
         ll = s2.S2LatLng.from_radians(0.5, -1.0)
-        coords = ll.coords()
-        self.assertAlmostEqual(coords[0], 0.5)
-        self.assertAlmostEqual(coords[1], -1.0)
+        coords = ll.coords
+        self.assertIsInstance(coords, s2.R2Point)
+        self.assertAlmostEqual(coords.x, 0.5)
+        self.assertAlmostEqual(coords.y, -1.0)
 
     # Geometric operations
 
