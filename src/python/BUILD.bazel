@@ -90,6 +90,7 @@ pybind_library(
     srcs = ["s2latlng_bindings.cc"],
     deps = [
         "//:s2",
+        "@abseil-cpp//absl/strings",
     ],
 )
 

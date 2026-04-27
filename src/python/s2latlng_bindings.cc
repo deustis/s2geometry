@@ -69,7 +69,7 @@ void bind_s2latlng(py::module& m) {
            py::arg("lat_radians"), py::arg("lng_radians"),
            "Construct from latitude and longitude in radians.\n\n"
            "Raises ValueError if out of range.")
-      .def_static("from_radians_normalized",
+      .def_static("normalized_from_radians",
            [](double lat_radians, double lng_radians) {
                MaybeThrowNotFinite(lat_radians);
                MaybeThrowNotFinite(lng_radians);

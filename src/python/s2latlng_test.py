@@ -69,27 +69,27 @@ class TestS2LatLng(unittest.TestCase):
         with self.assertRaises(ValueError):
             s2.S2LatLng.from_radians(2.0, 0.0)  # lat > pi/2
 
-    def test_from_radians_normalized_clamps_latitude(self):
-        ll = s2.S2LatLng.from_radians_normalized(2.0, 0.0)  # lat > pi/2
+    def test_normalized_from_radians_clamps_latitude(self):
+        ll = s2.S2LatLng.normalized_from_radians(2.0, 0.0)  # lat > pi/2
         self.assertAlmostEqual(ll.lat.radians, math.pi / 2)
         self.assertAlmostEqual(ll.lng.radians, 0.0)
 
-    def test_from_radians_normalized_wraps_longitude(self):
+    def test_normalized_from_radians_wraps_longitude(self):
         # 3*pi/2 wraps to -pi/2
-        ll = s2.S2LatLng.from_radians_normalized(0.0, 3 * math.pi / 2)
+        ll = s2.S2LatLng.normalized_from_radians(0.0, 3 * math.pi / 2)
         self.assertAlmostEqual(ll.lat.radians, 0.0)
         self.assertAlmostEqual(ll.lng.radians, -math.pi / 2)
 
-    def test_from_radians_normalized_in_range_is_unchanged(self):
-        ll = s2.S2LatLng.from_radians_normalized(0.5, -1.0)
+    def test_normalized_from_radians_in_range_is_unchanged(self):
+        ll = s2.S2LatLng.normalized_from_radians(0.5, -1.0)
         self.assertAlmostEqual(ll.lat.radians, 0.5)
         self.assertAlmostEqual(ll.lng.radians, -1.0)
 
-    def test_from_radians_normalized_non_finite_raises(self):
+    def test_normalized_from_radians_non_finite_raises(self):
         with self.assertRaises(ValueError):
-            s2.S2LatLng.from_radians_normalized(float('nan'), 0.0)
+            s2.S2LatLng.normalized_from_radians(float('nan'), 0.0)
         with self.assertRaises(ValueError):
-            s2.S2LatLng.from_radians_normalized(0.0, float('inf'))
+            s2.S2LatLng.normalized_from_radians(0.0, float('inf'))
 
     def test_from_degrees(self):
         ll = s2.S2LatLng.from_degrees(45.0, -90.0)
