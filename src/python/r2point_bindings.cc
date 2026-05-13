@@ -3,6 +3,7 @@
 
 #include <sstream>
 
+#include "absl/hash/hash.h"
 #include "s2/r2.h"
 
 namespace py = pybind11;
@@ -72,6 +73,10 @@ void bind_r2point(py::module& m) {
       .def("__itruediv__", [](R2Point& self, double v) -> R2Point& {
         return self /= v;
       }, py::arg("v"), "In-place division by scalar")
+      .def("__hash__", [](const R2Point& self) {
+        return absl::Hash<std::pair<double, double>>()(
+            std::make_pair(self.x(), self.y()));
+      })
 
       // String representation
       .def("__repr__", [](const R2Point& p) {

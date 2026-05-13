@@ -3,6 +3,7 @@
 
 #include <sstream>
 
+#include "absl/hash/hash.h"
 #include "s2/s2point.h"
 
 namespace py = pybind11;
@@ -70,6 +71,10 @@ void bind_s2point(py::module& m) {
       .def("__itruediv__", [](S2Point& self, double v) -> S2Point& {
         return self /= v;
       }, py::arg("v"), "In-place division by scalar")
+      .def("__hash__", [](const S2Point& self) {
+        return absl::Hash<std::tuple<double, double, double>>()(
+            std::make_tuple(self.x(), self.y(), self.z()));
+      })
 
       // String representation
       // __repr__ prefixes class name, __str__ delegates to C++ operator<<
