@@ -10,11 +10,13 @@
 #include "s2/r1interval.h"
 #include "s2/s1angle.h"
 #include "s2/s1interval.h"
+#include "s2/s2cap.h"
 #include "s2/s2cell.h"
 #include "s2/s2cell_id.h"
 #include "s2/s2latlng.h"
 #include "s2/s2latlng_rect.h"
 #include "s2/s2point.h"
+#include "s2/s2region.h"
 
 namespace py = pybind11;
 
@@ -32,7 +34,7 @@ void MaybeThrowEmptyMismatch(const R1Interval& lat, const S1Interval& lng) {
 }
 
 void bind_s2latlng_rect(py::module& m) {
-  py::class_<S2LatLngRect>(m, "S2LatLngRect",
+  py::class_<S2LatLngRect, S2Region>(m, "S2LatLngRect",
       "A closed latitude-longitude rectangle on the sphere.\n\n"
       "Capable of representing the empty and full rectangles as well as\n"
       "single points. Uses cylindrical topology: longitudes wrap at +/-180\n"
@@ -137,6 +139,8 @@ void bind_s2latlng_rect(py::module& m) {
            "Return the true centroid multiplied by its surface area.\n\n"
            "The result is not unit length. The centroid may not be contained\n"
            "by the rectangle.")
+      .def("cap_bound", &S2LatLngRect::GetCapBound,
+           "Return the smallest cap containing this rectangle.")
       .def("contains", py::overload_cast<const S2LatLngRect&>(
                &S2LatLngRect::Contains, py::const_),
            py::arg("other"),
@@ -146,15 +150,6 @@ void bind_s2latlng_rect(py::module& m) {
            py::arg("ll"),
            "Return true if this rectangle contains the given S2LatLng.\n\n"
            "The argument must be normalized.")
-      .def("contains_point", py::overload_cast<const S2Point&>(
-               &S2LatLngRect::Contains, py::const_),
-           py::arg("p"),
-           "Return true if this rectangle contains the given S2Point.\n\n"
-           "The point does not need to be normalized.")
-      .def("contains_cell", py::overload_cast<const S2Cell&>(
-               &S2LatLngRect::Contains, py::const_),
-           py::arg("cell"),
-           "Return true if this rectangle contains the given cell.")
       .def("interior_contains_point", py::overload_cast<const S2Point&>(
                &S2LatLngRect::InteriorContains, py::const_),
            py::arg("p"),
@@ -188,9 +183,14 @@ void bind_s2latlng_rect(py::module& m) {
            py::arg("v0"), py::arg("v1"),
            "Return true if the boundary of this rectangle intersects\n"
            "the given geodesic edge (v0, v1).")
+<<<<<<< HEAD
       .def("may_intersect", &S2LatLngRect::MayIntersect, py::arg("cell"),
            "Return true if this rectangle may intersect the given cell.\n\n"
            "Cheap but not exact; use intersects_cell() for an exact test.")
+=======
+
+      // Set operations
+>>>>>>> 46022f4 (pybind: Add S2Region base class, declare inheritance in subclasses)
       .def("expanded", &S2LatLngRect::Expanded, py::arg("margin"),
            "Return this rectangle expanded by margin.lat() on each latitude\n"
            "side and margin.lng() on each longitude side.\n\n"
@@ -235,6 +235,7 @@ void bind_s2latlng_rect(py::module& m) {
            py::arg("other"),
            "Return the Hausdorff distance between this rectangle and other.\n\n"
            "H(A,B) = max(h(A,B), h(B,A)).")
+<<<<<<< HEAD
       // get_cap_bound() is deferred until S2Cap is bound.
       .def("rect_bound", &S2LatLngRect::GetRectBound,
            "Return a bounding rectangle for this rectangle (returns self).")
@@ -245,6 +246,8 @@ void bind_s2latlng_rect(py::module& m) {
                return cell_ids;
            },
            "Return a list of S2CellIds whose union covers this rectangle.")
+=======
+>>>>>>> 46022f4 (pybind: Add S2Region base class, declare inheritance in subclasses)
 
       // Operators
       .def(py::self == py::self, "Return true if rectangles are equal.")

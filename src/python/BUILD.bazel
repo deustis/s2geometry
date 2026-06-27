@@ -38,6 +38,7 @@ pybind_extension(
         ":s2latlng_bindings",
         ":s2latlng_rect_bindings",
         ":s2point_bindings",
+        ":s2region_bindings",
     ],
 )
 
@@ -154,6 +155,12 @@ pybind_library(
     ],
 )
 
+pybind_library(
+    name = "s2region_bindings",
+    srcs = ["s2region_bindings.cc"],
+    deps = ["//:s2"],
+)
+
 # ========================================
 # Python Tests
 # ========================================
@@ -227,5 +234,11 @@ py_test(
 py_test(
     name = "s2cell_test",
     srcs = ["s2cell_test.py"],
+    deps = [":s2geometry_pybind"],
+)
+
+py_test(
+    name = "s2region_test",
+    srcs = ["s2region_test.py"],
     deps = [":s2geometry_pybind"],
 )

@@ -12,12 +12,14 @@
 #include "s2/s2cap.h"
 #include "s2/s2cell.h"
 #include "s2/s2cell_id.h"
+#include "s2/s2latlng_rect.h"
 #include "s2/s2point.h"
+#include "s2/s2region.h"
 
 namespace py = pybind11;
 
 void bind_s2cap(py::module& m) {
-  py::class_<S2Cap>(m, "S2Cap",
+  py::class_<S2Cap, S2Region>(m, "S2Cap",
       "A disc-shaped region defined by a center and radius on the sphere.\n\n"
       "The cap represents a portion of the unit sphere cut off by a plane.\n"
       "The boundary is a circle; the cap is a closed set (contains its\n"
@@ -101,6 +103,8 @@ void bind_s2cap(py::module& m) {
            "Return the true centroid of the cap multiplied by its surface area.\n\n"
            "The result lies on the ray from the origin through the cap's center.\n"
            "For zero-radius caps, always returns the origin (0, 0, 0).")
+      .def("rect_bound", &S2Cap::GetRectBound,
+           "Return the smallest lat/lng rectangle containing this cap.")
 
       // Predicates
       .def("is_empty", &S2Cap::is_empty,
@@ -123,15 +127,6 @@ void bind_s2cap(py::module& m) {
                &S2Cap::Contains, py::const_),
            py::arg("other"),
            "Return true if this cap contains the given cap.")
-      .def("contains_point", py::overload_cast<const S2Point&>(
-               &S2Cap::Contains, py::const_),
-           py::arg("point"),
-           "Return true if this cap contains the given point.\n\n"
-           "point should be unit length.")
-      .def("contains_cell", py::overload_cast<const S2Cell&>(
-               &S2Cap::Contains, py::const_),
-           py::arg("cell"),
-           "Return true if this cap contains the given cell.")
       .def("intersects", py::overload_cast<const S2Cap&>(
                &S2Cap::Intersects, py::const_),
            py::arg("other"),
@@ -144,18 +139,6 @@ void bind_s2cap(py::module& m) {
            py::arg("point"),
            "Return true if the interior of this cap contains the given point.\n\n"
            "point should be unit length.")
-      .def("may_intersect", &S2Cap::MayIntersect, py::arg("cell"),
-           "Return true if this cap may intersect the given cell.")
-
-      .def("cap_bound", &S2Cap::GetCapBound,
-           "Return a bounding cap for this cap (returns self).")
-      // get_rect_bound() is deferred until S2LatLngRect is bound.
-      .def("cell_union_bound", [](const S2Cap& self) {
-               std::vector<S2CellId> cell_ids;
-               self.GetCellUnionBound(&cell_ids);
-               return cell_ids;
-           },
-           "Return a list of S2CellIds whose union covers this cap.")
 
       // Operators
       .def(py::self == py::self, "Return true if caps are identical.")

@@ -9,10 +9,13 @@
 #include "absl/hash/hash.h"
 #include "absl/strings/str_cat.h"
 #include "s2/s1chord_angle.h"
+#include "s2/s2cap.h"
 #include "s2/s2cell.h"
 #include "s2/s2cell_id.h"
 #include "s2/s2latlng.h"
+#include "s2/s2latlng_rect.h"
 #include "s2/s2point.h"
+#include "s2/s2region.h"
 
 namespace py = pybind11;
 
@@ -45,7 +48,7 @@ void MaybeThrowPositionOutOfRange(uint64_t pos) {
 }  // namespace
 
 void bind_s2cell(py::module& m) {
-  auto cls = py::class_<S2Cell>(m, "S2Cell",
+  auto cls = py::class_<S2Cell, S2Region>(m, "S2Cell",
       "An S2Region representing a single cell on the sphere.\n\n"
       "Unlike S2CellId (which is just a 64-bit identifier), S2Cell carries\n"
       "precomputed state that allows efficient containment and intersection\n"
@@ -182,27 +185,14 @@ void bind_s2cell(py::module& m) {
            py::overload_cast<const S2Cell&>(&S2Cell::GetMaxDistance, py::const_),
            py::arg("cell"),
            "Return the maximum distance from this cell to the given cell.")
-      .def("cell_union_bound", [](const S2Cell& self) {
-               std::vector<S2CellId> cell_ids;
-               self.GetCellUnionBound(&cell_ids);
-               return cell_ids;
-           },
-           "Return a list of S2CellIds whose union covers this cell.\n\n"
-           "For a single S2Cell, this always returns a list containing\n"
-           "just this cell's id.")
+      .def("cap_bound", &S2Cell::GetCapBound,
+           "Return the smallest cap containing this cell.")
+      .def("rect_bound", &S2Cell::GetRectBound,
+           "Return the smallest lat/lng rect containing this cell.")
       .def("contains", py::overload_cast<const S2Cell&>(
                &S2Cell::Contains, py::const_),
            py::arg("cell"),
            "Return true if this cell contains the given cell")
-      .def("contains_point", py::overload_cast<const S2Point&>(
-               &S2Cell::Contains, py::const_),
-           py::arg("point"),
-           "Return true if this cell contains the given point.\n\n"
-           "S2Cells are closed sets: points along an edge or vertex\n"
-           "belong to the adjacent cell(s) as well.\n"
-           "The point does not need to be normalized.")
-      .def("may_intersect", &S2Cell::MayIntersect, py::arg("cell"),
-           "Return true if this cell may intersect the given cell")
       .def("subdivide", [](const S2Cell& self) {
                if (self.is_leaf()) {
                  throw py::value_error("Leaf cell has no children");

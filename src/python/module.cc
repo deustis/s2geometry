@@ -16,6 +16,7 @@ void bind_s2cell_id(py::module& m);
 void bind_s2latlng(py::module& m);
 void bind_s2latlng_rect(py::module& m);
 void bind_s2point(py::module& m);
+void bind_s2region(py::module& m);
 // keep-sorted end
 
 PYBIND11_MODULE(s2geometry_bindings, m) {
@@ -40,7 +41,10 @@ PYBIND11_MODULE(s2geometry_bindings, m) {
   // Deps: s1angle, s2point
   bind_s1chord_angle(m);
 
-  // Deps: s1angle, s1chord_angle, s2point
+  // No dependencies (abstract base)
+  bind_s2region(m);
+
+  // Deps: s1angle, s1chord_angle, s2point, s2region
   bind_s2cap(m);
 
   // Deps: s1angle, s2point
@@ -49,9 +53,9 @@ PYBIND11_MODULE(s2geometry_bindings, m) {
   // Deps: s1angle, s2point, s2latlng, r2point, r2rect
   bind_s2cell_id(m);
 
-  // Deps: r2rect, s1chord_angle, s2cap, s2cell_id, s2latlng, s2point
+  // Deps: r2rect, s1chord_angle, s2cap, s2cell_id, s2latlng, s2point, s2region
   bind_s2cell(m);
 
-  // Deps: r1interval, s1angle, s1interval, s2cell, s2cell_id, s2latlng, s2point
+  // Deps: r1interval, s1angle, s1interval, s2cell, s2cell_id, s2latlng, s2point, s2region
   bind_s2latlng_rect(m);
 }
