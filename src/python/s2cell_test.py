@@ -339,5 +339,30 @@ class TestS2Cell(unittest.TestCase):
         self.assertEqual(repr(cell), "S2Cell(3/02)")
 
 
+    # S2Region interface
+
+    def test_cap_bound(self):
+        cell = s2.S2Cell(s2.S2CellId.from_face(0))
+        bound = cell.cap_bound()
+        self.assertIsInstance(bound, s2.S2Cap)
+        self.assertFalse(bound.is_empty())
+        # The cap bound must contain the cell's center.
+        self.assertTrue(bound.contains_point(cell.center()))
+        # The cap bound must also contain each vertex of the cell.
+        for k in range(4):
+            self.assertTrue(bound.contains_point(cell.vertex(k)))
+
+    def test_rect_bound(self):
+        cell = s2.S2Cell(s2.S2CellId.from_face(0))
+        bound = cell.rect_bound()
+        self.assertIsInstance(bound, s2.S2LatLngRect)
+        self.assertFalse(bound.is_empty())
+        # The rect bound must contain the cell's center.
+        self.assertTrue(bound.contains_point(cell.center()))
+        # The rect bound must also contain each vertex of the cell.
+        for k in range(4):
+            self.assertTrue(bound.contains_point(cell.vertex(k)))
+
+
 if __name__ == "__main__":
     unittest.main()
