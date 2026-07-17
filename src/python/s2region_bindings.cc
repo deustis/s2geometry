@@ -23,6 +23,7 @@ void bind_s2region(py::module& m) {
            "Return a bounding cap for this region. The bound may not be tight.")
       .def("rect_bound", &S2Region::GetRectBound,
            "Return a bounding lat/lng rectangle for this region. The bound may not be tight.")
+      // Lambda converts the output parameter of GetCellUnionBound to a return value.
       .def("cell_union_bound", [](const S2Region& self) {
                std::vector<S2CellId> cell_ids;
                self.GetCellUnionBound(&cell_ids);
